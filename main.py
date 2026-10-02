@@ -86,19 +86,32 @@ def generate_image_url(image_prompt):
     return image_url
 
 def post_to_facebook(image_url, caption):
-    # মেটা গ্রাফ এপিআই v22.0 ফটোস এন্ডপয়েন্ট
-    url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
-    payload = {
-        'url': image_url,
-        'caption': caption,
-        'access_token': FB_PAGE_ACCESS_TOKEN
-    }
-    
-    res = requests.post(url, data=payload)
-    if res.status_code == 200:
-        print("Successfully posted viral optical illusion to Facebook!")
-    else:
-        print("Failed to post:", res.text)
+    try:
+        # ১. Pollinations AI থাইকা ছবিডা বাইনারি ফাইল হিসেবে ডাউনলোড
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        img_res = requests.get(image_url, headers=headers)
+        
+        if img_res.status_code == 200:
+            # ২. সরাসরি বাইনারি ফাইল হিসেবে ফেসবুকে ফটো আপলোড
+            url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
+            payload = {
+                'caption': caption,
+                'access_token': FB_PAGE_ACCESS_TOKEN
+            }
+            files = {
+                'source': ('image.jpg', img_res.content, 'image/jpeg')
+            }
+            
+            res = requests.post(url, data=payload, files=files)
+            if res.status_code == 200:
+                print("Successfully posted viral optical illusion to Facebook!")
+            else:
+                print("Failed to post:", res.text)
+        else:
+            print(f"Failed to download image from Pollinations AI. Status code: {img_res.status_code}")
+            
+    except Exception as e:
+        print(f"Error during posting to Facebook: {e}")
 
 if __name__ == "__main__":
     img_prompt, fb_caption = generate_content()

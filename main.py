@@ -75,9 +75,9 @@ def generate_image_url(image_prompt):
     return image_url
 
 def post_to_facebook(image_url, caption):
-    url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
+    url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/feed"
     payload = {
-        'url': image_url,
+        'link': image_url,
         'message': caption,
         'access_token': FB_PAGE_ACCESS_TOKEN
     }

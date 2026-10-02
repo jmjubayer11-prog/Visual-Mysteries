@@ -79,39 +79,44 @@ def generate_content():
     fallback = random.choice(FALLBACK_TEMPLATES)
     return fallback["prompt"], fallback["caption"]
 
-def generate_image_url(image_prompt):
+def generate_image_and_save(image_prompt):
     seed = random.randint(1, 999999)
     formatted_prompt = requests.utils.quote(f"masterpiece, high quality, 8k resolution, viral optical illusion, {image_prompt}")
     image_url = f"https://pollinations.ai/p/{formatted_prompt}?width=1080&height=1080&seed={seed}&model=flux&nologo=true"
-    return image_url
+    
+    # ব্রাউজার হেডার দিয়া ছবিডা ডাউনলোড কইরা লোকাল ফাইল 'illusion.jpg' হিসেবে সেভ করা
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    
+    res = requests.get(image_url, headers=headers)
+    if res.status_code == 200:
+        with open("illusion.jpg", "wb") as f:
+            f.write(res.content)
+        print("Image downloaded and saved successfully as illusion.jpg!")
+        return "illusion.jpg"
+    else:
+        raise Exception(f"Failed to download image. Status code: {res.status_code}")
 
-def post_to_facebook(image_url, caption):
-    try:
-        # ১. Pollinations AI থাইকা ছবিডা বাইনারি ফাইল হিসেবে ডাউনলোড
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        img_res = requests.get(image_url, headers=headers)
+def post_to_facebook(image_path, caption):
+    url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
+    
+    payload = {
+        'caption': caption,
+        'access_token': FB_PAGE_ACCESS_TOKEN
+    }
+    
+    # সেভ করা আসল JPG ফাইলডা ফেসবুকে আপলোড
+    with open(image_path, 'rb') as img_file:
+        files = {
+            'source': ('illusion.jpg', img_file, 'image/jpeg')
+        }
+        res = requests.post(url, data=payload, files=files)
         
-        if img_res.status_code == 200:
-            # ২. সরাসরি বাইনারি ফাইল হিসেবে ফেসবুকে ফটো আপলোড
-            url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
-            payload = {
-                'caption': caption,
-                'access_token': FB_PAGE_ACCESS_TOKEN
-            }
-            files = {
-                'source': ('image.jpg', img_res.content, 'image/jpeg')
-            }
-            
-            res = requests.post(url, data=payload, files=files)
-            if res.status_code == 200:
-                print("Successfully posted viral optical illusion to Facebook!")
-            else:
-                print("Failed to post:", res.text)
-        else:
-            print(f"Failed to download image from Pollinations AI. Status code: {img_res.status_code}")
-            
-    except Exception as e:
-        print(f"Error during posting to Facebook: {e}")
+    if res.status_code == 200:
+        print("Successfully posted viral optical illusion to Facebook!")
+    else:
+        print("Failed to post:", res.text)
 
 if __name__ == "__main__":
     img_prompt, fb_caption = generate_content()

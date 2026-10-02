@@ -1,6 +1,7 @@
 import os
 import requests
 import random
+import time
 from google import genai
 
 # ১. সিক্রেট চাবিগুলা নেওয়া
@@ -31,11 +32,26 @@ def generate_content():
     Line 2: A super engaging short Facebook caption driving comments/shares (e.g., "Only 1% of people can spot it in under 5 seconds! Comment what you see 👇") followed by EXACTLY TWO powerful viral hashtags. Do NOT include words like "Line 2".
     """
     
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt
-    )
+    # একাধিক মডেলে ট্রাই করার ফলব্যাক মেকানিজম
+    models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash"]
+    response = None
     
+    for model_name in models_to_try:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            if response and response.text:
+                print(f"Successfully generated using model: {model_name}")
+                break
+        except Exception as e:
+            print(f"Model {model_name} failed or busy, trying fallback model... Error: {e}")
+            time.sleep(2)
+
+    if not response or not response.text:
+        raise Exception("All Gemini models are currently unavailable.")
+
     lines = [line.strip() for line in response.text.strip().split("\n") if line.strip()]
     
     image_prompt = lines[0].replace("Line 1:", "").strip()
@@ -50,7 +66,7 @@ def generate_image_url(image_prompt):
     return image_url
 
 def post_to_facebook(image_url, caption):
-    # মেটা গ্রাফ এপিআই v22.0 এর অফিশিয়াল ফিড মেথড
+    # মেটা গ্রাফ এপিআই v22.0
     url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/feed"
     payload = {
         'link': image_url,

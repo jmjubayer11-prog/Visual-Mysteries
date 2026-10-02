@@ -78,7 +78,7 @@ def post_to_facebook(image_url, caption):
     url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
     payload = {
         'url': image_url,
-        'caption': caption,
+        'message': caption,
         'access_token': FB_PAGE_ACCESS_TOKEN
     }
     res = requests.post(url, data=payload)

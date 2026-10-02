@@ -4,15 +4,15 @@ import random
 import time
 from google import genai
 
-# ১. গিটহাব সিক্রেটস থেকে কি ও আইডিগুলো রিড করা
+# ১. গিটহাব সিক্রেটস থেকে কি ও আইডিগুলো নেওয়া
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID")
 FB_PAGE_ACCESS_TOKEN = os.environ.get("FB_PAGE_ACCESS_TOKEN")
 
-# ২. গুগল জেমেনি ক্লায়েন্ট ইনিশিয়ালাইজ করা
+# ২. গুগল জেমেনি ক্লায়েন্ট
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# ভাইরাল অপটিক্যাল ইলিউশন ব্যাকআপ ডাটাবেজ (সার্ভার ডাউন থাকলে ব্যবহারের জন্য)
+# ব্যাকআপ ভাইরাল অপটিক্যাল ইলিউশন ডাটাবেজ
 FALLBACK_TEMPLATES = [
     {
         "prompt": "A ultra-realistic hidden camouflage leopard perfectly blended into rocky autumn trees and dry brown leaves optical illusion, high contrast, highly detailed",
@@ -33,7 +33,6 @@ FALLBACK_TEMPLATES = [
 ]
 
 def generate_content():
-    # জেমিনি এআই দিয়ে কন্টেন্ট তৈরির চেষ্টা করা
     try:
         selected_category = random.choice([
             "Hidden Animals Optical Illusion (e.g., find the hidden leopard, owl, or tiger in nature)",
@@ -51,7 +50,6 @@ def generate_content():
         Line 2: A super engaging short Facebook caption driving comments/shares (e.g., "Only 1% of people can spot it in under 5 seconds! Comment what you see 👇") followed by EXACTLY TWO powerful viral hashtags. Do NOT include words like "Line 2".
         """
         
-        # ৩ বার রিট্রাই করার লজিক
         response = None
         for attempt in range(3):
             try:
@@ -75,7 +73,6 @@ def generate_content():
     except Exception as e:
         print(f"Gemini API unavailable ({e}). Switching to viral fallback template!")
         
-    # জেমেনি সার্ভার ডাউন থাকলে ব্যাকআপ টেমপ্লেট থেকে অটোম্যাটিক পিক করবে
     fallback = random.choice(FALLBACK_TEMPLATES)
     return fallback["prompt"], fallback["caption"]
 
@@ -84,7 +81,6 @@ def generate_image_and_save(image_prompt):
     formatted_prompt = requests.utils.quote(f"masterpiece, high quality, 8k resolution, viral optical illusion, {image_prompt}")
     image_url = f"https://pollinations.ai/p/{formatted_prompt}?width=1080&height=1080&seed={seed}&model=flux&nologo=true"
     
-    # ব্রাউজার হেডার দিয়া ছবিডা ডাউনলোড কইরা লোকাল ফাইল 'illusion.jpg' হিসেবে সেভ করা
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -100,13 +96,11 @@ def generate_image_and_save(image_prompt):
 
 def post_to_facebook(image_path, caption):
     url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
-    
     payload = {
         'caption': caption,
         'access_token': FB_PAGE_ACCESS_TOKEN
     }
     
-    # সেভ করা আসল JPG ফাইলডা ফেসবুকে আপলোড
     with open(image_path, 'rb') as img_file:
         files = {
             'source': ('illusion.jpg', img_file, 'image/jpeg')
@@ -120,5 +114,5 @@ def post_to_facebook(image_path, caption):
 
 if __name__ == "__main__":
     img_prompt, fb_caption = generate_content()
-    img_url = generate_image_url(img_prompt)
-    post_to_facebook(img_url, fb_caption)
+    local_img_path = generate_image_and_save(img_prompt)
+    post_to_facebook(local_img_path, fb_caption)

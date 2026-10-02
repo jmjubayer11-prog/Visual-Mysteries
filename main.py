@@ -75,13 +75,12 @@ def generate_image_url(image_prompt):
     return image_url
 
 def post_to_facebook(image_url, caption):
-    # মেটা গ্রাফ এপিআই Feed Endpoint
-  url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
-payload = {
-    'url': image_url,
-    'message': caption,
-    'access_token': FB_PAGE_ACCESS_TOKEN
-}
+    url = f"https://graph.facebook.com/v22.0/{FB_PAGE_ID}/photos"
+    payload = {
+        'url': image_url,
+        'caption': caption,
+        'access_token': FB_PAGE_ACCESS_TOKEN
+    }
     res = requests.post(url, data=payload)
     if res.status_code == 200:
         print("Successfully posted viral optical illusion to Facebook!")
